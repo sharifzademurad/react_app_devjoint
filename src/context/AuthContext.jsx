@@ -1,44 +1,88 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useReducer, useEffect } from 'react';
 
 const AuthContext = createContext();
 
+const initialState = {
+  user: null,
+  token: null,
+  loading: true,
+};
+
+const authReducer = (state, action) => {
+  switch (action.type) {
+    case 'LOGIN':
+      return {
+        ...state,
+        user: action.payload.user,
+        token: action.payload.token,
+        loading: false,
+      };
+    case 'LOGOUT':
+      return {
+        ...state,
+        user: null,
+        token: null,
+        loading: false,
+      };
+    case 'FINISH_LOADING':
+      return {
+        ...state,
+        loading: false,
+      };
+    default:
+      return state;
+  }
+};
+
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
-  const [token, setToken] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [state, dispatch] = useReducer(authReducer, initialState);
 
   useEffect(() => {
     const savedToken = localStorage.getItem('token');
     const savedUser = localStorage.getItem('user');
 
     if (savedToken && savedUser) {
-      setToken(savedToken);
-      setUser(JSON.parse(savedUser));
+      dispatch({
+        type: 'LOGIN',
+        payload: { token: savedToken, user: JSON.parse(savedUser) },
+      });
+    } else {
+      dispatch({ type: 'FINISH_LOADING' });
     }
-    setLoading(false);
   }, []);
 
   const login = (userData, fakeToken = 'secret-jwt-token') => {
-    setUser(userData);
-    setToken(fakeToken);
     localStorage.setItem('token', fakeToken);
     localStorage.setItem('user', JSON.stringify(userData));
+
+    dispatch({
+      type: 'LOGIN',
+      payload: { user: userData, token: fakeToken },
+    });
   };
 
   const logout = () => {
-    setUser(null);
-    setToken(null);
-    localStorage.clear(); 
+    localStorage.clear();
+    dispatch({ type: 'LOGOUT' });
   };
 
   const simulate401Error = () => {
-    alert('401 Unauthorized: Tokenin vaxtı bitdi, yenidən daxil olun!');
+    alert('401 Unauthorized: Tokenin vaxtı bitdi!');
     logout();
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, login, logout, simulate401Error, loading }}>
-      {!loading && children}
+    <AuthContext.Provider
+      value={{
+        user: state.user,
+        token: state.token,
+        loading: state.loading,
+        login,
+        logout,
+        simulate401Error,
+      }}
+    >
+      {!state.loading && children}
     </AuthContext.Provider>
   );
 };
