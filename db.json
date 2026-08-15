@@ -4,6 +4,12 @@
       "title": "salam",
       "content": "salam",
       "id": "b1_2keBJZDM"
+    },
+    {
+      "title": "salamsa",
+      "content": "sdsd",
+      "id": "rf1_SXiltkM"
     }
-  ]
+  ],
+  "$schema": "./node_modules/json-server/schema.json"
 }
